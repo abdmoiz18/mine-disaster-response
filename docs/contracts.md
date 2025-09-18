@@ -126,7 +126,7 @@ def solve_maze_strategically(mine_grid, miner_dict, safe_zone):
 | gyro_x | REAL | X-axis rotation |
 | gyro_y | REAL | Y-axis rotation |
 | gyro_z | REAL | Z-axis rotation |
-| rssi	INTEGER	Signal strength |
+| rssi | INTEGER | Signal strength |
 | battery | INTEGER | Battery percentage |
 
 
@@ -134,6 +134,7 @@ def solve_maze_strategically(mine_grid, miner_dict, safe_zone):
 
 
 | Column | Type | Description |
+|--------|------|-------------| 
 | id | INTEGER | Primary Key |
 | timestamp | TEXT | ISO 8601 UTC time |
 | device_id | TEXT | Target Miner ID |
