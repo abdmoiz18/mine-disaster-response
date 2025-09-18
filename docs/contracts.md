@@ -143,13 +143,13 @@ def solve_maze_strategically(mine_grid, miner_dict, safe_zone):
 
 ## How to Use This File:
 
-1.  **For the Hardware Team:** They will look at **Section 2.1** to know exactly what JSON format to make their ESP32 devices send.
-2.  **For the Data Team:** They will look at **Section 3** to know the exact function name, input parameters, and output format they must provide.
-3.  **For You (Cloud/Gateway):** You will use:
+1.  **For the Hardware Team:** You will look at **Section 2.1** to know exactly what JSON format to make their ESP32 devices send.
+2.  **For the Data Team:** You will look at **Section 3** to know the exact function name, input parameters, and output format you must provide.
+3.  **For Cloud/Gateway Team:** You will use:
     - **Section 2.1** to parse incoming LoRa data.
     - **Section 2.2** to format commands to send back to devices.
     - **Section 2.3 and 2.4** to configure Azure IoT Hub messaging.
     - **Section 4** to design your SQLite database tables.
 4.  **For Everyone:** This is the document to point to during integration. If a device is sending the wrong data format, you can point to Section 2.1. If the algorithm returns an error, you can point to Section 3.
 
-By putting everything in `contracts.md`, you create a single, powerful reference that prevents misunderstandings and keeps the entire team aligned.
+
