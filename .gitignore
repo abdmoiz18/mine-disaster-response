@@ -205,3 +205,26 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Azure credentials and secrets - NEVER COMMIT THESE
+credentials.json
+config.ini
+*.key
+*.pem
+env.local
+.env
+*.env
+
+# IDE and OS-specific files
+.vscode/
+.idea/
+.DS_Store
+
+# Hardware / Arduino
+.pio/
+*.elf
+*.bin
+
+# Database (optional, but you may want to share an empty DB schema)
+*.db
+*.sqlite
