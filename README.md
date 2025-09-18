@@ -2,7 +2,7 @@
 
 A self-contained edge computing system using Raspberry Pi, LoRa, and ESP32 devices to track and guide trapped miners to safety within a grid-based mine environment. Features real-time localization, strategic pathfinding, and cloud-based monitoring.
 
-## Ì≥Å Project Structure & Team Ownership
+## Project Structure & Team Ownership
 
 | Component | Lead | Description |
 | :--- | :--- | :--- |
@@ -13,16 +13,16 @@ A self-contained edge computing system using Raspberry Pi, LoRa, and ESP32 devic
 | [`/cloud`](./cloud/azure-functions/README.md) | Cloud Team | Lightweight Azure Functions for monitoring and high-level command relay. |
 | [`/docs`](./docs/contracts.md) | All | Project contracts, plans, and the predefined mine grid map. |
 
-## Ì∫Ä Getting Started
+## Getting Started
 
 1.  **Read the Contracts:** Before doing anything, read [`/docs/contracts.md`](./docs/contracts.md). These are the project's rules.
 2.  **Setup for your role:** Navigate to your team's directory and follow the detailed README for setup instructions.
 
-## Ì¥ß Core Technologies
+## Core Technologies
 - **Edge:** ESP32 (C++), LoRa (SX1276), IMU (MPU-6050)
 - **Gateway:** Raspberry Pi 4, Python, SQLite
 - **Intelligence:** Custom A* Pathfinding, Strategic Grouping Algorithms
 - **Cloud:** Azure IoT Hub, Azure Functions
 
-## Ì≥Ñ License
+## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
