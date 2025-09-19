@@ -1,0 +1,11 @@
+services:
+  mine-simulator:
+    build: .
+    container_name: mine-simulator
+    network_mode : host
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    # You can override the default host/port here
+    # command : ["python", "init_simulator.py", "192.168.137.100", "5000"]
+
