@@ -225,3 +225,29 @@ if __name__ == "__main__":
         print("Cleaned up resources. Exiting.")
     print("Mine Navigation Gateway stopped.")
 
+# 8 listener.py (for reference)
+# This is a simple listener script to receive C2D messages from Azure IoT Hub
+# Save this as listener.py and run it separately if needed
+# It will print any messages received from the cloud
+
+from azure.iot.device import IoTHubDeviceClient
+
+CONNECTION_STRING = os.getenv("IOTHUB_DEVICE_CONNECTION_STRING")
+client = IoTHubDeviceClient.create_from_connection_string(CONNECTION_STRING)
+
+def message_handler(message):
+    print(f"Received message from cloud: {message.data.decode('utf-8')}")
+    if message.custom_properties:
+        print("Custom properties:", message.custom_properties)
+
+client.on_message_received = message_handler
+client.connect()
+
+print("Listening for C2D messages... Press Ctrl+C to stop.")
+try:
+    while True:
+        time.sleep(1)
+except KeyboardInterrupt:
+    print("Stopped message listener.")
+finally:
+    client.disconnect()
