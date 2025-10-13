@@ -29,19 +29,20 @@ GRID_LENGTH = 30
 # These beacons are scattered throughout the mine
 # The transmission power of each beacon varies slightly, creating unique fingerprint patterns
 
+# More evenly distributed beacons than last time
 BLE_BEACONS = {
-    'beacon_001' : {'x': 2, 'y' : 3, 'tx_power' : -65},
-    'beacon_002' : {'x': 8, 'y' : 25, 'tx_power' : -63},
-    'beacon_003' : {'x': 15, 'y' : 8, 'tx_power' : -66},
-    'beacon_004' : {'x': 22, 'y' : 18, 'tx_power' : -68},
-    'beacon_005' : {'x': 5, 'y' : 15, 'tx_power' : -65},
-    'beacon_006' : {'x': 28, 'y' : 5, 'tx_power' : -67},
-    'beacon_007' : {'x': 12, 'y' : 28, 'tx_power' : -64},
-    'beacon_008' : {'x': 25, 'y' : 12, 'tx_power' : -67},
-    'beacon_009' : {'x': 18, 'y' : 22, 'tx_power' : -61},
-    'beacon_010' : {'x': 7, 'y' : 10, 'tx_power' : -62},
-    'beacon_011' : {'x': 20, 'y' : 7, 'tx_power' : -69},
-    'beacon_012' : {'x': 10, 'y' : 20, 'tx_power' : -66}
+    'beacon_001': {'x': 5, 'y': 5, 'tx_power': -60},
+    'beacon_002': {'x': 5, 'y': 15, 'tx_power': -62},
+    'beacon_003': {'x': 5, 'y': 25, 'tx_power': -61},
+    'beacon_004': {'x': 15, 'y': 5, 'tx_power': -63},
+    'beacon_005': {'x': 15, 'y': 15, 'tx_power': -59},
+    'beacon_006': {'x': 15, 'y': 25, 'tx_power': -62},
+    'beacon_007': {'x': 25, 'y': 5, 'tx_power': -61},
+    'beacon_008': {'x': 25, 'y': 15, 'tx_power': -64},
+    'beacon_009': {'x': 25, 'y': 25, 'tx_power': -60},
+    'beacon_010': {'x': 10, 'y': 10, 'tx_power': -63},
+    'beacon_011': {'x': 20, 'y': 20, 'tx_power': -62},
+    'beacon_012': {'x': 10, 'y': 20, 'tx_power': -61}
 }
 
 
@@ -84,8 +85,6 @@ def calculate_ble_rssi(miner_pos, beacon_info, environmental_noise=True):
 
     # vii - Return RSSI value between -100 to -30 dBm
     return max(-100, min(-30, rssi))
-
-# Later, use more realistic models. Take environmental conditions into account. Real BLE is noisy
 
 
 # 4 - Miner Movement Simulation
@@ -131,10 +130,6 @@ class MinerSimulator:
         # vi - Simulate friction (gradually reduce velocity)
         self.velocity[0] *= 0.95
         self.velocity[1] *= 0.95
-    
-# Note for later - Occasionally change acceleration for realistic movements.
-# Avoid making movement perfectly linear. Do not ignore mine layout constraints
-# Do not decouple IMU from actual position
 
 
 # 5 - Miner Data Generation
@@ -168,9 +163,7 @@ def generate_miner_data(miner_simulator, ble_readings):
 # Orchestrate the entire simulation - movement, BLE scanning, data transmission
 
 def run_simulation():
-    """
-    Main simulation loop - Practice orchestration and timing
-    """
+    """Main simulation loop - Practice orchestration and timing"""
 
     # Initialize miner simulators with different start positions
     miners = []
@@ -208,10 +201,13 @@ def run_simulation():
                 message = json.dumps(miner_data).encode('utf-8')
                 sock.sendto(message, (HOST, PORT))
                 print(f"Sent {miner.miner_id}: pos({miner.position[0]:.1f}, {miner.position[1]:.1f}) with {len(ble_readings)} BLE readings")
-                print(f"Completed transmission at {datetime.now().strftime('%H:%M:%S')}")
             
             last_update = current_time
-            time.sleep(SEND_INTERVAL)
+            print(f"Completed transmission at {datetime.now().strftime('%H:%M:%S')}")
+            # Maintain fixed simulation step
+            elapsed = time.time() - current_time
+            if elapsed < SEND_INTERVAL:
+                time.sleep(SEND_INTERVAL - elapsed)
 
     except KeyboardInterrupt:
         print("Simulation stopped by user")
@@ -219,18 +215,13 @@ def run_simulation():
     finally:
         sock.close()
 
-# Later
-# Use consistent time steps for physics, seperate concerns (movement vs communication)
-# Add simulation controls (speed, pause), include verbose logging for debugging
-
-# Don't couple simulation timing with real time, don't ignore time delta inconsistencies
-# Don't make the loop too complex with seperate functions, also use error handling
-
 
 # 7 - Execution
 
 if __name__ == "__main__":
     # Allow overriding configuration from command line
+    print("Usage: python init_simulator_v2.py [HOST] [PORT]")
+    print("Example: python init_simulator_v2.py 192.168.137.100 5000")
     if len(sys.argv) > 1:
         HOST = sys.argv[1]
     if len(sys.argv) > 2:
