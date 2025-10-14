@@ -7,5 +7,5 @@ services:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
     # You can override the default host/port here
-    # command : ["python", "init_simulator.py", "192.168.137.100", "5000"]
+    # command : ["python", "init_simulator_v2.py", "192.168.137.100", "5000"]
 
