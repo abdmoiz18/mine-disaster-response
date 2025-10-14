@@ -33,7 +33,7 @@ thread_pool = ThreadPoolExecutor(max_workers=4)
 
 # 2 - Azure IoT Hub Setup
 
-def __init__iot_client():
+def init_iot_client():
     # Initialize & return an IoT Hub Client
     try:
         client = IoTHubDeviceClient.create_from_connection_string(CONNECTION_STRING)
@@ -126,62 +126,44 @@ def init_database():
 # 4 - BLE Fingerprinting Integration
 # Process incoming BLE fingerprint data and estimate position using kNN or other algorithms
 
+def distance(pos1, pos2):
+    return ((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2) ** 0.5
+
 def estimate_miner_position(ble_readings):
     # Estimated position based on kNN or similar algorithm. Integrate with fingerprinting algorithm.
     # i - Validate BLE readings (beacons, RSSI values)
-    if not ble_readings:
-        return None, 0.0  # No valid readings
-    # ii - Call kNN/algorithm to estimate position and confidence
-    try:
-        # Call ML Model here (stubbed)
-        prediction, confidence = self.model.predict(ble_readings)
-        # Handle low confidence cases using IMU readings and the previous cached prediction
-        if confidence < 0.5:
-            print("Low confidence in position estimate, using IMU data for correction.")
-            # Apply IMU-based correction (stubbed)
-            prediction = self.apply_imu_correction(prediction)
-            confidence += 0.2  # Boost confidence slightly
-        return prediction, confidence
-    except Exception as e:
-        print(f"Error in position estimation: {e}")
+    if not ble_readings or len(ble_readings) == 0:
         return None, 0.0
+    # Simple Simulation - If we have BLE readings, return a random position in the mine
+    x = random.uniform(0, GRID_WIDTH-1)
+    y = random.uniform(0, GRID_LENGTH-1)
+    confidence = 0.8 # Simulate decent confidence
+    return (x, y), confidence
 
 def update_miner_state(miner_id, position, confidence, imu_data):
-    # Update miner state with new position estimate. State management and IMU validation
-    # 1 - Update current_miner_states dictionary
+    # Simplified Program
     global current_miner_states
+
+    # i - Update in-memory state
     current_miner_states[miner_id] = {
         'current_position': position,
         'confidence': confidence,
-        'imu_data': imu_data,
-        'last_update': datetime.now().isoformat()
+        'last_update' : datetime.now().isoformat()
     }
-    # 2 - Store position history for tracking
-    position_history = current_miner_states[miner_id].get('position_history', [])
-    position_history.append({
-        'timestamp': datetime.now().isoformat(),
-        'position': position,
-        'confidence': confidence
-    })
-    current_miner_states[miner_id]['position_history'] = position_history
-    # 3 - Use IMU data to validate movement (optional)
-    # 4 - Update database with new telemetry
+
+    # ii - Log to database
     with db_lock:
         cursor = db_conn.cursor()
         cursor.execute('''
             INSERT INTO miner_telemetry (device_id, timestamp, ble_readings, imu_data, battery, estimated_x, estimated_y, confidence)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (miner_id, datetime.now().isoformat(), json.dumps(ble_readings), json.dumps(imu_data), imu_data.get('battery', 100), position[0], position[1], confidence))
-        conn.commit()
-    # 5 - Check if miner needs new navigation instructions
-    if miner_id in current_miner_states and 'goal_position' in current_miner_states[miner_id]:
-        goal = current_miner_states[miner_id]['goal_position']
-        if distance(position, goal) < 2.0:  # Within 2 meters of goal
-            print(f"Miner {miner_id} has reached the goal at {goal}")
-            del current_miner_states[miner_id]['goal_position']  # Clear goal
-            send_navigation_command(miner_id, None)  # Send stop command
-    pass
+        ''', (miner_id, datetime.now().isoformat(), 
+        json.dumps(ble_readings), json.dumps(imu_data), 
+        imu.data.get('battery',100), position[0], position[1], confidence))
+        db_conn.commit()
+    print(f"Updated miner_id : {miner_id} at ({position[0]:.1f}, {position[1]:.1f}) with confidence {confidence:.2f}")
 
+### FINISHED HERE, FIX 5, 6, 7 BELOW ###
 
 # 5 - Navigation and Pathfinding
 # Calculate and manage navigation paths using A* algorithm and handle miner movement
