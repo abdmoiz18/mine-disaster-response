@@ -1,4 +1,6 @@
-# Updated script for BLE fingerprinting gateway with Azure IoT Hub integration
+# BLE Fingerprinting Gateway with Azure IoT Hub integration
+# Python 3.7+ required
+# Main dependencies: azure-iot-device, sqlite3, concurrent.futures, socket, threading
 
 # 1 - Imports and Configs
 
@@ -8,6 +10,7 @@ import time
 import socket
 import threading
 import os
+import random
 from datetime import datetime
 from azure.iot.device import IoTHubDeviceClient, Message
 from concurrent.futures import ThreadPoolExecutor
@@ -60,7 +63,7 @@ def send_to_azure(message_body):
         # Try to reconnect
         try:
             iot_client.disconnect()
-            iot_client = __init__iot_client()
+            iot_client = init_iot_client()
         except Exception as conn_e:
             print(f"Failed to reconnect to IoT Hub: {conn_e}")
 
@@ -140,7 +143,7 @@ def estimate_miner_position(ble_readings):
     confidence = 0.8 # Simulate decent confidence
     return (x, y), confidence
 
-def update_miner_state(miner_id, position, confidence, imu_data):
+def update_miner_state(miner_id, position, confidence, imu_data, ble_readings, db_conn):
     # Simplified Program
     global current_miner_states
 
@@ -159,7 +162,7 @@ def update_miner_state(miner_id, position, confidence, imu_data):
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ''', (miner_id, datetime.now().isoformat(), 
         json.dumps(ble_readings), json.dumps(imu_data), 
-        imu.data.get('battery',100), position[0], position[1], confidence))
+        imu_data.get('battery',100), position[0], position[1], confidence))
         db_conn.commit()
     print(f"Updated miner_id : {miner_id} at ({position[0]:.1f}, {position[1]:.1f}) with confidence {confidence:.2f}")
 
@@ -168,129 +171,93 @@ def update_miner_state(miner_id, position, confidence, imu_data):
 # 5 - Navigation and Pathfinding
 # Calculate and manage navigation paths using A* algorithm and handle miner movement
 
+def a_star_pathfinding(start, goal, grid=None):
+    # Stub for simple pathfinding - replace with A* later
+    return [start, goal]
+
 class NavigationManager:
     def __init__(self):
-        self.path_cache = {}
         self.miner_goals = {}
     
     def update_miner_goal(self, miner_id, goal_position):
-        # Update miner goal and recalculate path if needed
+        # Set a miner's navigation goal
         self.miner_goals[miner_id] = goal_position
-        self.path_cache[miner_id] = None  # Invalidate cached path
-        self.recalculate_path(miner_id)
-        pass
+        print(f"Set goal for miner {miner_id} to {goal_position}")
     
     def get_next_navigation_step(self, miner_id, current_position):
-        # i - Check for a cached path for this miner and goal
-        cache_key = f"{miner_id}_{self.miner_goals.get(miner_id)}"
-        if cache_key in self.path_cache:
-            return self.path_cache[cache_key]
-        # ii - If no cached path or miner deviated, recalculate using A* and cache it
-        path = self.recalculate_path(miner_id)
-        if path:
-            self.path_cache[cache_key] = path
-            return path.pop(0)  # Return next step
-        return None
-
-        # Placeholder function for movement, replace with A* pathfinding later
-        def a_star_pathfinding(start, goal, grid):
-    # Stub function for A* pathfinding algorithm
-    # Return a list of waypoints from start to goal
-            return [start, goal]
-
-        # iii - Find the current position in path, return only the next step
-        try:
-            current_index = path.index(current_position)
-            return path[current_index + 1] if current_index + 1 < len(path) else None
-        except ValueError:
-            return path[0] if path else None  # If not found, return first step
-        
-        # v - Handle miner deviations
-        
-    
-    def handle_miner_deviation(self, miner_id, expected_position):
-        # Recalculate path if miner deviates significantly
-        current_position = current_miner_states[miner_id]['current_position']
-        if distance(current_position, expected_position) > 3.0:  # More than 3 meters off
-            print(f"Miner {miner_id} deviated from path, recalculating...")
-            self.recalculate_path(miner_id)
-        pass
-
-    def recalculate_path(self, miner_id):
-        # Recalculate path using A* algorithm
-        if miner_id not in current_miner_states or miner_id not in self.miner_goals:
+        # Simplified version of next movement instruction
+        if miner_id not in self.miner_goals:
             return None
-        start = current_miner_states[miner_id]['current_position']
         goal = self.miner_goals[miner_id]
-        path = a_star_pathfinding(start, goal, grid=None)  # Replace grid with actual mine layout
-        return path
 
+        # Simple direct step towards goal
+        dx = goal[0] - current_position[0]
+        dy = goal[1] - current_position[1]
+        # Normalize to unit step
+        dist = max(0.1, distance(current_position, goal))
+        step_x = current_position[0] + (dx / dist)*2.0
+        step_y = current_position[1] + (dy / dist)*2.0
+        return (step_x, step_y)
+
+def send_navigation_command(miner_id, next_step):
+    # Stub : Send navigation command to miner
+    if next_step:
+        print(f"Sending {miner_id} to ({next_step[0]:.1f}, {next_step[1]:.1f})")
+    else:
+        print(f"Stopping {miner_id}")
 
 # 6 - UDP Listener with Thread Pool
 # Handle multiple miner connections concurrently using thread pool instead of simple threading
 
 def process_miner_message(message_data, db_conn):
-    # Process a single miner message called by thread pool
+    # Process a single miner message
     global current_miner_states
-    # i - Validate message structure
     try:
-        message = json.loads(message_data)
+        message = json.loads(message_data.decode('utf-8'))
         miner_id = message.get('device_id')
-        if not miner_id or 'ble_readings' not in message or 'imu_data' not in message:
-            print("Invalid message format")
-            return
-        ble_readings = message['ble_readings']
-        imu_data = message['imu_data']
-    except json.JSONDecodeError:
-        print("Received invalid JSON")
-        return
-    # ii - Extract BLE readings and IMU data
-    position, confidence = estimate_miner_position(ble_readings)
-    if position:
-        update_miner_state(miner_id, position, confidence, imu_data)
-    else:
-        print(f"Could not estimate position for miner {miner_id}")
-        return
-    # iii - Estimate position using BLE fingerprinting
-    position, confidence = estimate_miner_position(ble_readings)
-    if position:
-        update_miner_state(miner_id, position, confidence, imu_data)
-    else:
-        print(f"Could not estimate position for miner {miner_id}")
-        return
-    # iv - Update miner state
-    update_miner_state(miner_id, position, confidence, imu_data)
-    
-    # v - Log to database
-    log_miner_data(db_conn, miner_id, position, confidence, imu_data)
+        ble_readings = message.get('ble_readings', {})
+        imu_data = message.get('imu_data', {})
 
-    # vi - Send to Azure IoT Hub
-    send_to_azure({
-        'device_id': miner_id,
-        'timestamp': datetime.now().isoformat(),
-        'position': position,
-        'confidence': confidence,
-        'ble_readings': ble_readings,
-        'imu_data': imu_data
-    })
-    pass
+        if not miner_id:
+            print("Invalid Message, received without device_id")
+            return
+
+        # Estimate position using BLE fingerprinting
+        position, confidence = estimate_miner_position(ble_readings)
+        if position:
+            update_miner_state(miner_id, position, confidence, imu_data, ble_readings, db_conn)
+        else:
+            print(f"Could not estimate position for miner {miner_id}")
+        # Send to Azure
+        send_to_azure({
+            "device_id": miner_id,
+            "timestamp": datetime.now().isoformat(),
+            "position": position,
+            "confidence": confidence
+        })
+    except Exception as e:
+        print(f"Error processing miner message: {e}")
 
 def udp_listener(db_conn):
-    # Listen for incoming UDP messages from miners
+    # Listen for UDP messages from miners and process them using thread pool
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((UDP_IP, UDP_PORT))
     print(f"Listening for UDP messages on {UDP_IP}:{UDP_PORT}")
-    
+
     try:
         while True:
-            data, addr = sock.recvfrom(1024)
-            # Submit to thread pool for processing
-            thread_pool.submit(process_miner_message, data, db_conn)
-    except KeyboardInterrupt:
-        print("UDP listener stopped.")
+            try:
+                data, addr = sock.recvfrom(1024)  # buffer size is 1024 bytes
+                # Submit to thread pool for processing
+                thread_pool.submit(process_miner_message, data, db_conn)
+            except KeyboardInterrupt:
+                print("UDP listener stopped.")
+                break
+            except Exception as e:
+                print(f"Error in UDP listener: {e}")
     finally:
         sock.close()
-        thread_pool.shutdown()
+        # Don't shutdown thread pool here, as main loop may still be running
 
 # 7 - Main Loop and Execution
 
@@ -298,38 +265,43 @@ def main_loop(db_conn):
     # Main loop that runs navigation and monitoring
     navigation_mgr = NavigationManager()
 
+    # Set some initial goals for testing
+    navigation_mgr.update_miner_goal("miner_01", SAFE_ZONE)
+    navigation_mgr.update_miner_goal("miner_02", (GRID_WIDTH//2, GRID_LENGTH//2))
+
     while True:
         try:
-            # Process each miner's navigation needs
+            # Process each miner's navigation
             for miner_id, state in current_miner_states.items():
-                if state.get('goal_position'):
-                    next_step = navigation_mgr.get_next_navigation_step(miner_id, state['current_position'])
-                    if next_step:
-                        send_navigation_command(miner_id, next_step)
-            
-            # Send periodic status updates to Azure
+                next_step = navigation_mgr.get_next_navigation_step(miner_id, state['current_position'])
+                if next_step:
+                    send_navigation_command(miner_id, next_step)
+                
+            # Status update
             status_message = {
-                "gateway_id" : "rpi_mine_entrance",
-                "timestamp" : datetime.now().isoformat(),
-                "miners_tracked" : len(current_miner_states),
-                "status" : "operational" 
+                    "gateway_id" : "rpi_mine_entrance",
+                    "timestamp" : datetime.now().isoformat(),
+                    "miners_tracked" : len(current_miner_states),
+                    "status" : "operational"
             }
             send_to_azure(status_message)
-            time.sleep(10)
+            time.sleep(10)  # Main loop interval
         except Exception as e:
             print(f"Error in main loop: {e}")
             time.sleep(5)
 
 if __name__ == "__main__":
     print("Starting BLE Fingerprinting Gateway...")
-    db_conn = init_database()
-    iot_client = __init__iot_client()
 
-    print(f"Starting UDP listener with thread pool...")
+    # Initialize components
+    db_conn = init_database()
+    iot_client = init_iot_client()
+
+    print("Starting UDP Listener...")
     udp_thread = threading.Thread(target=udp_listener, args=(db_conn,), daemon=True)
     udp_thread.start()
 
-    # Run main loop
+    # Start main loop
     try:
         main_loop(db_conn)
     except KeyboardInterrupt:
@@ -338,4 +310,5 @@ if __name__ == "__main__":
         if iot_client:
             iot_client.disconnect()
         db_conn.close()
-        print("Gateway shut down.")
+        thread_pool.shutdown(wait=True)
+        print("Gateway stopped.")
