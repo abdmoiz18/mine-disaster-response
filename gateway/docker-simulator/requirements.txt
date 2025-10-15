@@ -1,1 +1,3 @@
 # requirements.txt (simulator)
+azure-iot-device
+# Note: sqlite3, socket, threading are built into Python
