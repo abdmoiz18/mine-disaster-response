@@ -241,7 +241,6 @@ def process_miner_message(message_data, db_conn):
             "confidence": confidence,
             "ble_readings": ble_readings,
             "imu_data": imu_data
-            "message_type": "miner_telemetry" 
         }
         battery_value = message.get("battery", imu_data.get("battery", None))
         if battery_value is not None:
@@ -295,7 +294,6 @@ def main_loop(db_conn):
                     "timestamp" : datetime.now().isoformat(),
                     "miners_tracked" : len(current_miner_states),
                     "status" : "operational"
-                    "message_type": "gateway_status"
             }
             send_to_azure(status_message)
             time.sleep(10)  # Main loop interval
