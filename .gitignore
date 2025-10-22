@@ -228,3 +228,5 @@ env.local
 # Database (optional, but you may want to share an empty DB schema)
 *.db
 *.sqlite
+*terminal_history*
+*.env
