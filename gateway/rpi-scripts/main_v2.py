@@ -228,13 +228,24 @@ def process_miner_message(message_data, db_conn):
             update_miner_state(miner_id, position, confidence, imu_data, ble_readings, db_conn)
         else:
             print(f"Could not estimate position for miner {miner_id}")
+            
         # Send to Azure
-        send_to_azure({
+        azure_payload = {
             "device_id": miner_id,
-            "timestamp": datetime.now().isoformat(),
-            "position": position,
-            "confidence": confidence
-        })
+            "timestamp": datetime.now().isoformat(),              # local gateway time
+            "device_timestamp": message.get("timestamp"),         # original message timestamp (simulator)
+            "position": {
+                "x": position[0],
+                "y": position[1]
+            } if position else None,
+            "confidence": confidence,
+            "ble_readings": ble_readings,
+            "imu_data": imu_data
+        }
+        battery_value = message.get("battery", imu_data.get("battery", None))
+        if battery_value is not None:
+            azure_payload["battery"] = battery_value
+        send_to_azure(azure_payload)
     except Exception as e:
         print(f"Error processing miner message: {e}")
 
