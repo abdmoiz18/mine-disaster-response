@@ -1,13 +1,23 @@
-project_name = "mine-response"
-location = "centralindia"
-resource_group_name = "mine_disaster_rg"
-iot_hub_sku = "S1"
-cosmos_db_throughput = 400
-stream_analytics_sku = "Standard"
+# General Configuration - Matches your existing setup
+location            = "Central India"
+resource_group_name = "azure-iot-rg"
 
+# Resource Specific Names - To match your existing infrastructure
+iot_hub_name              = "proto-mine-resp"
+cosmos_db_account_name    = "proto-mine-resp-cosmosdb"
+stream_analytics_job_name = "mine-data-pipeline"
+
+# SKU Configuration - To match your existing infrastructure
+iot_hub_sku_name = "F1"
+iot_hub_sku_tier = "Free"
+stream_analytics_sku = "StandardV2"
+
+# Tags - Merging your existing tags with best practices
 tags = {
-  Environment = "development"
-  Project     = "Mine Disaster Response"
-  Owner       = "abdmoiz18"
-  ManagedBy   = "Terraform"
+  Environment = "Dev"
+  Group       = "Capstone"
+  Project     = "MineResp"
+  Semester    = "7"
+  Owner       = "abdmoiz18" # Azure AD login of the owner
+  ManagedBy   = "Terraform"    # Best practice tag
 }

@@ -1,42 +1,58 @@
 variable "project_name" {
-    description = "Base name used for all resources"
-    default = "mine-disaster"
+  description = "Base name used for constructing resource names"
+  default     = "proto-mine-resp"
 }
 
 variable "location" {
-    description = "Azure region for all resources"
-    default = "eastus"
+  description = "Azure region for all resources"
+  default     = "centralindia"
 }
 
 variable "resource_group_name" {
-    description = "Resource group for all resources"
-    default = "mine-disaster-rg"
+  description = "Resource group for all resources"
+  default     = "azure-iot-rg"
 }
 
 variable "tags" {
-    description = "Tags to apply to all resources"
-    type = map(string)
-    default = {
-        Environment = "dev"
-        Project = "Mine Disaster Response"
-        ManagedBy = "Terraform"
-    }
+  description = "Tags to apply to all resources (example: { Environment = \"Dev\", Group = \"Capstone\", Project = \"MineResp\", Semester = \"7\", ManagedBy = \"Terraform\" })"
+  type        = map(string)
+  default = {
+    Environment = "Dev"
+    Group       = "Capstone"
+    Project     = "MineResp"
+    Semester    = "7"
+    ManagedBy   = "Terraform"
+  }
 }
 
-# IoT Hub variables 
-variable "iot_hub_sku" {
-    description = "SKU for IoT Hub"
-    default = "S1"
+# Resource-specific names to ensure compatibility with existing Azure infrastructure
+variable "iot_hub_name" {
+  description = "Name of the existing IoT Hub"
+  default     = "proto-mine-resp"
 }
 
-# Cosmos DB variables
-variable "cosmos_db_throughput" {
-    description = "RU/s for CosmosDB"
-    default = 400
+variable "cosmos_db_account_name" {
+  description = "Name of the existing Cosmos DB Account"
+  default     = "proto-mine-resp-cosmosdb"
 }
 
-# Stream Analytics variables 
+variable "stream_analytics_job_name" {
+  description = "Name of the existing Stream Analytics Job"
+  default     = "mine-data-pipeline"
+}
+
+# SKU variables for IoT Hub and Stream Analytics resources
+variable "iot_hub_sku_name" {
+  description = "SKU Name for IoT Hub (F1 for Free)"
+  default     = "F1"
+}
+
+variable "iot_hub_sku_tier" {
+  description = "SKU Tier for IoT Hub"
+  default     = "Free"
+}
+
 variable "stream_analytics_sku" {
-    description = "SKU for Stream Analytics"
-    default = "Standard"
+  description = "SKU for Stream Analytics"
+  default     = "StandardV2"
 }

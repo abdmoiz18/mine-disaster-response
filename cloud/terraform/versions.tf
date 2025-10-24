@@ -1,25 +1,27 @@
-# Configuration of provider and backend
-
 terraform {
-    required_providers {
-        azurerm = {
-            source = "hashicorp/azurerm"
-            version = "~> 3.0.0"
-        }
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      # This allows for non-breaking updates
+      version = "~> 3.0"
     }
-
-    # The backend configuration below is commented out.
-    # To enable remote state storage, first create the Azure storage account and container.
-    # Then, uncomment the backend block and update the resource_group_name, storage_account_name, container_name, and key as needed.
-    # This will allow Terraform to store state remotely and enable collaboration.
-    # backend "azurerm" {
-    #    resource_group_name = "terraform-state-rg"
-    #    storage_account_name = "mineterraformstate"
-    #    container_name = "tfstate"
-    #    key = "mine-disaster.tfstate"
-    #}
+  }
+  # ==> BEST PRACTICE: Configure Remote State <==
+  # See: https://developer.hashicorp.com/terraform/tutorials/azure/azure-storage-account for official guidance.
+  # ==> BEST PRACTICE: Configure Remote State <==
+  # This block should be uncommented after you create a dedicated storage account.
+  # It prevents losing your state file and allows for team collaboration.
+  #
+  # backend "azurerm" {
+  #   storage_account_name = "protominerespterraform" # Must be globally unique (Azure Storage Account names must be globally unique and follow Azure naming conventions)
+  #   storage_account_name = "protominerespterraform" # Must be globally unique
+  #   container_name       = "tfstate"
+  #   key                  = "prod.terraform.tfstate"
+  # }
 }
 
+# Configure the Azure Provider
+# The 'features {}' block is required for the azurerm provider and enables provider-specific features.
 provider "azurerm" {
-    features {}
+  features {}
 }
