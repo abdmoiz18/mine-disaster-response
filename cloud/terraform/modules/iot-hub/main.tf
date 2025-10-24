@@ -1,49 +1,40 @@
 variable "name" {}
 variable "resource_group_name" {}
 variable "location" {}
-variable "sku" {}
+variable "sku_name" {}
+variable "sku_tier" {}
 variable "tags" {}
 
 resource "azurerm_iothub" "iothub" {
-    name = var.name
-    resource_group_name = var.resource_group_name
-    location = var.location
+  name                = var.name
+  resource_group_name = var.resource_group_name
+  location            = var.location
 
-    sku {
-        name = var.sku
-        capacity = 1
-    }
+  sku {
+    name     = var.sku_name
+    tier     = var.sku_tier
+    capacity = 1
+  }
 
-    tags = var.tags
-
-    shared_access_policy {
-        name = "iothubowner"
-        rights = [
-            "RegistryRead",
-            "RegistryWrite",
-            "ServiceConnect",
-            "DeviceConnect"
-        ]
-    }
+  tags = var.tags
 }
 
-# Create a consumer group for Stream Analytics
+# Always create a consumer group for Stream Analytics (Terraform will manage existence)
 resource "azurerm_iothub_consumer_group" "stream_analytics" {
-    name = "streamanalytics"
-    iothub_name = azurerm_iothub.iothub.name
-    resource_group_name = var.resource_group_name
-    eventhub_endpoint_name = "events"
+  name                   = "streamanalytics"
+  iothub_name            = azurerm_iothub.iothub.name
+  resource_group_name    = var.resource_group_name
+  eventhub_endpoint_name = "events"
+}
+
+output "namespace" {
+  value = azurerm_iothub.iothub.event_hub_events_namespace
 }
 
 output "id" {
-    value = azurerm_iothub.iothub.id
+  value = azurerm_iothub.iothub.id
 }
 
 output "hostname" {
-    value = azurerm_iothub.iothub.hostname
-}
-
-output "connection_string" {
-    value = azurerm_iothub.iothub.shared_access_policy[0].primary_connection_string
-    sensitive = true
+  value = azurerm_iothub.iothub.hostname
 }
