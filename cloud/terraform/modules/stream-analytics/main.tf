@@ -2,15 +2,17 @@ variable "name" {}
 variable "resource_group_name" {}
 variable "location" {}
 variable "sku" {}
+variable "iot_hub_name" {}
 variable "iot_hub_namespace" {}
 variable "cosmos_db_account_name" {}
 variable "cosmos_db_database_name" {}
 variable "cosmos_db_container_name" {}
 variable "tags" {}
 
-# Data source to get keys from existing resources
+## Data source to get keys from existing resources
 data "azurerm_iothub" "iothub" {
-  name                = split("/", var.iot_hub_namespace)[-1] # Extracts name from namespace
+  # ==> FIX: Use the new variable directly <==
+  name                = var.iot_hub_name
   resource_group_name = var.resource_group_name
 }
 
@@ -69,4 +71,9 @@ resource "azurerm_stream_analytics_output_cosmosdb" "cosmos_output" {
 resource "local_file" "query_file" {
   filename = "${path.module}/query.sql"
   content  = file("${path.module}/query.sql")
+}
+
+output "job_id" {
+  description = "The ID of the Stream Analytics job."
+  value       = azurerm_stream_analytics_job.job.job_id
 }

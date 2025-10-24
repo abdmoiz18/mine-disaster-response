@@ -41,6 +41,12 @@ variable "stream_analytics_job_name" {
   default     = "mine-data-pipeline"
 }
 
+variable "cosmos_db_database_name" {
+  description = "The name of the Cosmos DB SQL database."
+  type        = string
+  default     = "miner_navigation"
+}
+
 # SKU variables for IoT Hub and Stream Analytics resources
 variable "iot_hub_sku_name" {
   description = "SKU Name for IoT Hub (F1 for Free)"

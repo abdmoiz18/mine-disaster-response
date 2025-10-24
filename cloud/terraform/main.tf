@@ -32,6 +32,7 @@ module "stream_analytics" {
   resource_group_name       = azurerm_resource_group.rg.name
   location                  = var.location
   sku                       = var.stream_analytics_sku
+  iot_hub_name              = var.iot_hub_name
   iot_hub_namespace         = module.iot_hub.iot_hub_namespace
   cosmos_db_account_name    = module.cosmos_db.account_name
   cosmos_db_database_name   = var.cosmos_db_database_name

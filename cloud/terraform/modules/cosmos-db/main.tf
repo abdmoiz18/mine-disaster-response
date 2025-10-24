@@ -54,3 +54,8 @@ output "primary_key" {
   value     = azurerm_cosmosdb_account.db.primary_key
   sensitive = true
 }
+
+output "endpoint" {
+  description = "The endpoint URL of the Cosmos DB account."
+  value       = azurerm_cosmosdb_account.db.endpoint
+}

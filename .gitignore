@@ -230,3 +230,21 @@ env.local
 *.sqlite
 *terminal_history*
 *.env
+
+# Terraform-specific ignores
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.backup
+**/.terraform.lock.hcl
+
+# Ignore sensitive variable files
+*.tfvars
+*.tfvars.json
+
+# Ignore crash logs
+crash.log
+crash.*.log
+
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc
