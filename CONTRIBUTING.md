@@ -1,6 +1,6 @@
 # Contributor Guidelines
 
-**Last Updated:** 2025-10-25 14:01:52
+**Last Updated:** 2025-10-25
 
 This document provides guidelines for contributing to the Mine Disaster Response System project.
 
