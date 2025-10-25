@@ -9,7 +9,6 @@ stream_analytics_job_name = "mine-data-pipeline"
 
 # SKU Configuration - To match your existing infrastructure
 iot_hub_sku_name = "F1"
-iot_hub_sku_tier = "Free"
 stream_analytics_sku = "StandardV2"
 
 # Tags - Merging your existing tags with best practices

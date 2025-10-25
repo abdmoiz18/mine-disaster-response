@@ -12,7 +12,6 @@ module "iot_hub" {
   resource_group_name = azurerm_resource_group.rg.name
   location            = var.location
   sku_name            = var.iot_hub_sku_name
-  sku_tier            = var.iot_hub_sku_tier
   tags                = var.tags
 }
 

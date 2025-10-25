@@ -11,9 +11,15 @@ variable "tags" {}
 
 ## Data source to get keys from existing resources
 data "azurerm_iothub" "iothub" {
-  # ==> FIX: Use the new variable directly <==
   name                = var.iot_hub_name
   resource_group_name = var.resource_group_name
+}
+
+# This explicitly looks up the 'iothubowner' policy to get its key
+data "azurerm_iothub_shared_access_policy" "iothubowner_policy" {
+  name                = "iothubowner"
+  resource_group_name = var.resource_group_name
+  iothub_name         = var.iot_hub_name
 }
 
 data "azurerm_cosmosdb_account" "cosmosdb" {
@@ -45,8 +51,8 @@ resource "azurerm_stream_analytics_stream_input_iothub" "iothub_input" {
   # If it does not exist, create it in the IoT Hub configuration.
   eventhub_consumer_group_name = "streamanalytics" # Matches consumer group in iot-hub module
   iothub_namespace             = var.iot_hub_namespace
-  shared_access_policy_key     = lookup({for p in data.azurerm_iothub.iothub.shared_access_policy : p.name => p.primary_key}, "service", "")
-  shared_access_policy_name    = "service"
+  shared_access_policy_key     = data.azurerm_iothub_shared_access_policy.iothubowner_policy.primary_key
+  shared_access_policy_name    = "iothubowner"
 
   serialization {
     type     = "Json"

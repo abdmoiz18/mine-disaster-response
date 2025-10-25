@@ -2,7 +2,6 @@ variable "name" {}
 variable "resource_group_name" {}
 variable "location" {}
 variable "sku_name" {}
-variable "sku_tier" {}
 variable "tags" {}
 
 # This is the main resource block that defines the IoT Hub
