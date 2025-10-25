@@ -1,6 +1,6 @@
 # System Architecture
 
-**Last Updated:** 2025-10-25
+**Last Updated:** 2025-10-25 13:56:27
 
 This document provides a high-level overview of the entire Mine Disaster Response system, showing how the different components interact.
 
@@ -18,10 +18,10 @@ graph TD
     end
 
     subgraph "Edge Gateway (Raspberry Pi)"
-        C -- "1. Receives UDP/LoRa" --> E{Gateway Logic (main_v2.py)};
+        C -- "1. Receives UDP/LoRa" --> E["Gateway Logic (main_v2.py)"];
         E -- "2. Logs to" --> F[(mine_nav.db)];
         E -- "3. Uses ML Model" --> G[Positioning Model];
-        E -- "4. Sends to Cloud" --> H{Azure IoT Hub};
+        E -- "4. Sends to Cloud" --> H["Azure IoT Hub"];
     end
 
     subgraph "Azure Cloud (Managed by Terraform)"
@@ -58,3 +58,4 @@ graph TD
     *   **IoT Hub:** The secure entry point for all data into the cloud.
     *   **Stream Analytics:** A service that processes the data stream in real-time. For example, it could filter for low-battery alerts or check if a miner has entered a danger zone.
     *   **Cosmos DB:** A NoSQL database where the final, processed data is stored for long-term analysis and for use by other applications (like a web dashboard).
+    
