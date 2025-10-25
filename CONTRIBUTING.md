@@ -1,42 +1,66 @@
-# Contributing Guide
+# Contributor Guidelines
 
-Thank you for your interest in contributing to the Mine Disaster Response System. Following these guidelines helps to maintain the quality and consistency of the codebase.
+**Last Updated:** 2025-10-25 14:01:52
 
-## Development Workflow
+This document provides guidelines for contributing to the Mine Disaster Response System project.
 
-1.  **Create a Feature Branch:** All new work should be done on a feature branch, named descriptively.
-    ```bash
-    git checkout -b feature/add-astar-pathfinding
-    ```
+## A Note for External Observers
 
-2.  **Make Your Changes:** Write your code, following the existing style.
+Thank you for your interest in our project! Please note that this is a capstone project for a university course with a defined team. As such, **we are not accepting direct code contributions via Pull Requests** from outside the project group.
 
-3.  **Update Documentation:** If your changes affect a contract or architecture, you **must** update the relevant markdown files in the `/docs` folder. The `contracts.md` file is the source of truth.
+However, we welcome your feedback and suggestions! If you have an idea, spot a bug, or have a question, please feel free to **open an issue** in the repository.
 
-4.  **Commit Your Work:** Write clear and concise commit messages.
-    ```bash
-    git commit -m "feat: Implement A* pathfinding algorithm"
-    ```
+---
 
-5.  **Create a Pull Request:** Push your branch to the remote and open a Pull Request against the `main` branch. Provide a clear description of the changes you've made.
+## Internal Team Development Workflow
 
-## Key Principles
+This section is for project members:
 
-### 1. The Contract is King
+To ensure consistency and quality, all team members must follow this workflow for all changes.
 
-Before implementing any feature that involves communication between two components, check `docs/contracts.md`. If the contract needs to change, update it in your PR so it can be reviewed. **Do not write code that violates the contract.**
+### 1. Create a Feature Branch
 
-### 2. Infrastructure as Code (IaC)
+All new work, no matter how small, must be done on a dedicated feature branch. Name your branch descriptively.
 
-All Azure infrastructure is managed by Terraform. **Do not make manual changes to Terraform-managed resources in the Azure Portal.** If you need to experiment, create temporary resources and then formalize them in Terraform later. See `terraform/MANUAL_CHANGES_POLICY.md`.
+```bash
+# Good branch names
+git checkout -b feat/implement-astar-pathfinding
+git checkout -b fix/correct-iot-hub-reconnection-logic
+git checkout -b docs/update-architecture-diagram
+```
 
-### 3. Test with the Simulator
+### 2. Make Your Changes
 
-Before assuming your code works, test it against the `docker-simulator`. This ensures that your gateway logic or cloud components can correctly process the data that will eventually come from the real hardware.
+Write your code, following the existing style and conventions.
+
+### 3. Update Documentation
+
+If your changes affect a data format, communication protocol, or system architecture, you **must** update the relevant markdown files in the `/docs` folder. The `docs/contracts.md` file is our single source of truth.
+
+### 4. Commit Your Work
+
+Write clear and concise commit messages that explain the "what" and "why" of your change.
+
+```bash
+git commit -m "feat: Implement A* pathfinding algorithm"
+```
+
+### 5. Create a Pull Request
+
+Push your branch to the remote repository and open a Pull Request against the `main` branch.
+
+-   Assign at least one other team member to review your PR.
+-   No PR should be merged without at least one approval.
+
+## Key Development Principles
+
+1.  **The Contract is King**: Before implementing any feature that involves communication between two components, check `docs/contracts.md`. If the contract needs to change, it must be updated and approved as part of your PR.
+2.  **Infrastructure as Code (IaC)**: All Azure infrastructure is managed by Terraform. Do not make manual changes to production resources in the Azure Portal. Refer to the `terraform/MANUAL_CHANGES_POLICY.md` for the correct process for experimentation.
+3.  **Test with the Simulator**: Before submitting a PR, test your changes against the `docker-simulator`. This is the best way to ensure your gateway logic or cloud components will work with the data format from the hardware.
 
 ## Setting up the Full Environment
 
-To run the full software stack locally:
+To run the full software stack for end-to-end testing:
 
 1.  **Deploy the Cloud Backend:**
     *   Navigate to the `/terraform` directory.
@@ -45,7 +69,7 @@ To run the full software stack locally:
     *   Get the IoT Hub connection string for your device and set it as an environment variable (`export IOTHUB_DEVICE_CONNECTION_STRING=...`).
 
 2.  **Run the Gateway:**
-    *   In a terminal, navigate to `/gateway/rpi-scripts`.
+    *   In a new terminal, navigate to `/gateway/rpi-scripts`.
     *   Run `python main_v2.py`.
 
 3.  **Run the Simulator:**
