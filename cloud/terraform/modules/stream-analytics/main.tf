@@ -8,6 +8,10 @@ variable "cosmos_db_account_name" {}
 variable "cosmos_db_database_name" {}
 variable "cosmos_db_container_name" {}
 variable "tags" {}
+variable "job_storage_account_name" {
+  description = "The name of the Storage Account for the Stream Analytics job."
+  type        = string
+}
 
 ## Data source to get keys from existing resources
 data "azurerm_iothub" "iothub" {
@@ -27,30 +31,50 @@ data "azurerm_cosmosdb_account" "cosmosdb" {
   resource_group_name = var.resource_group_name
 }
 
+data "azurerm_storage_account" "job_storage" {
+  name                = var.job_storage_account_name
+  resource_group_name = var.resource_group_name
+}
+
 resource "azurerm_stream_analytics_job" "job" {
   name                         = var.name
   resource_group_name          = var.resource_group_name
   location                     = var.location
   compatibility_level          = "1.2"
   data_locale                  = "en-US"
-  streaming_units              = 1 # StandardV2 allows 1, 2, 4, 8...
+  streaming_units              = 10 # StandardV2 allows 1, 2, 4, 8...
   
   sku_name = var.sku
 
   transformation_query = file("${path.module}/query.sql")
 
   tags = var.tags
+
+  content_storage_policy     = "JobStorageAccount"
+
+  job_storage_account {
+    account_name = data.azurerm_storage_account.job_storage.name
+    account_key  = data.azurerm_storage_account.job_storage.primary_access_key
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  lifecycle {
+    ignore_changes = [
+      transformation_query,
+    ]
+  }
 }
 
 resource "azurerm_stream_analytics_stream_input_iothub" "iothub_input" {
-  name                         = "iothub-input"
+  name                         = "proto-mine-resp"
   stream_analytics_job_name    = azurerm_stream_analytics_job.job.name
   resource_group_name          = var.resource_group_name
   endpoint                     = "messages/events"
-  # Ensure the "streamanalytics" consumer group exists in the IoT Hub.
-  # If it does not exist, create it in the IoT Hub configuration.
-  eventhub_consumer_group_name = "streamanalytics" # Matches consumer group in iot-hub module
-  iothub_namespace             = var.iot_hub_namespace
+  eventhub_consumer_group_name = "$Default" # Match the live resource
+  iothub_namespace             = "proto-mine-resp" # Match the live resource
   shared_access_policy_key     = data.azurerm_iothub_shared_access_policy.iothubowner_policy.primary_key
   shared_access_policy_name    = "iothubowner"
 
@@ -68,7 +92,7 @@ data "azurerm_cosmosdb_sql_database" "db" {
 }
 
 resource "azurerm_stream_analytics_output_cosmosdb" "cosmos_output" {
-  name                      = "cosmosdb-output"
+  name                      = "miner-telemetry"
   stream_analytics_job_id   = azurerm_stream_analytics_job.job.id
   cosmosdb_account_key      = data.azurerm_cosmosdb_account.cosmosdb.primary_key
   cosmosdb_sql_database_id  = data.azurerm_cosmosdb_sql_database.db.id

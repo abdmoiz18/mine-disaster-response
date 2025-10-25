@@ -36,5 +36,6 @@ module "stream_analytics" {
   cosmos_db_account_name    = module.cosmos_db.account_name
   cosmos_db_database_name   = var.cosmos_db_database_name
   cosmos_db_container_name  = "miner_telemetry"
+  job_storage_account_name   = var.job_storage_account_name
   tags                      = var.tags
 }

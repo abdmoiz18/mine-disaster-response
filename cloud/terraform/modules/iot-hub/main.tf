@@ -6,6 +6,7 @@ variable "tags" {}
 
 # This is the main resource block that defines the IoT Hub
 resource "azurerm_iothub" "iothub" {
+  min_tls_version     = "1.2"
   name                = var.name
   resource_group_name = var.resource_group_name
   location            = var.location
@@ -16,14 +17,6 @@ resource "azurerm_iothub" "iothub" {
   }
 
   tags = var.tags
-}
-
-# This resource defines the consumer group for Stream Analytics
-resource "azurerm_iothub_consumer_group" "stream_analytics" {
-  name                   = "streamanalytics"
-  iothub_name            = azurerm_iothub.iothub.name
-  resource_group_name    = var.resource_group_name
-  eventhub_endpoint_name = "events"
 }
 
 # This data source explicitly looks up the shared access policy by name.

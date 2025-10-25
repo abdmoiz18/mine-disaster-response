@@ -57,3 +57,8 @@ variable "stream_analytics_sku" {
   description = "SKU for Stream Analytics"
   default     = "StandardV2"
 }
+
+variable "job_storage_account_name" {
+  description = "The name of the Storage Account for the Stream Analytics job."
+  type        = string
+}

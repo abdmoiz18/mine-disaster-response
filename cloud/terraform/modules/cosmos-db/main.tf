@@ -39,6 +39,7 @@ resource "azurerm_cosmosdb_sql_container" "miner_telemetry" {
   account_name          = azurerm_cosmosdb_account.db.name
   database_name         = azurerm_cosmosdb_sql_database.miner_navigation.name
   partition_key_paths   = ["/device_id"]
+  partition_key_version = 2
   # Throughput is not set in Serverless mode
 }
 

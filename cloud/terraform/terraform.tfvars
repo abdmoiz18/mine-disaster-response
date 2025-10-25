@@ -20,3 +20,5 @@ tags = {
   Owner       = "abdmoiz18" # Azure AD login of the owner
   ManagedBy   = "Terraform"    # Best practice tag
 }
+
+job_storage_account_name = "minedisasterfuncstor"
