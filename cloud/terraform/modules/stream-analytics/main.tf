@@ -54,23 +54,21 @@ resource "azurerm_stream_analytics_stream_input_iothub" "iothub_input" {
   }
 }
 
-resource "azurerm_stream_analytics_output_cosmosdb" "cosmos_output" {
-  name                      = "cosmosdb-output"
-  stream_analytics_job_name = azurerm_stream_analytics_job.job.name
-  resource_group_name       = var.resource_group_name
-  account_name              = data.azurerm_cosmosdb_account.cosmosdb.name
-  account_key               = data.azurerm_cosmosdb_account.cosmosdb.primary_key
-  database                  = var.cosmos_db_database_name
-  container_name            = var.cosmos_db_container_name
-  document_id               = "id"
-  # The partition_key "device_id" must match the partition key defined in the Cosmos DB container schema.
-  partition_key             = "device_id"
+# Data source to get the Cosmos DB Database ID
+data "azurerm_cosmosdb_sql_database" "db" {
+  name                = var.cosmos_db_database_name
+  resource_group_name = var.resource_group_name
+  account_name        = var.cosmos_db_account_name
 }
 
-# Ensure the query file exists
-resource "local_file" "query_file" {
-  filename = "${path.module}/query.sql"
-  content  = file("${path.module}/query.sql")
+resource "azurerm_stream_analytics_output_cosmosdb" "cosmos_output" {
+  name                      = "cosmosdb-output"
+  stream_analytics_job_id   = azurerm_stream_analytics_job.job.id
+  cosmosdb_account_key      = data.azurerm_cosmosdb_account.cosmosdb.primary_key
+  cosmosdb_sql_database_id  = data.azurerm_cosmosdb_sql_database.db.id
+  container_name            = var.cosmos_db_container_name
+  document_id               = "id"
+  partition_key             = "device_id"
 }
 
 output "job_id" {

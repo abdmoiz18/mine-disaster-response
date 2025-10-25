@@ -53,11 +53,6 @@ variable "iot_hub_sku_name" {
   default     = "F1"
 }
 
-variable "iot_hub_sku_tier" {
-  description = "SKU Tier for IoT Hub"
-  default     = "Free"
-}
-
 variable "stream_analytics_sku" {
   description = "SKU for Stream Analytics"
   default     = "StandardV2"

@@ -13,7 +13,6 @@ resource "azurerm_iothub" "iothub" {
 
   sku {
     name     = var.sku_name
-    tier     = var.sku_tier
     capacity = 1
   }
 
