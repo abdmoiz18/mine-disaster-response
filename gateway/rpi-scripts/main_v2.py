@@ -166,7 +166,12 @@ def update_miner_state(miner_id, position, confidence, imu_data, ble_readings, d
         db_conn.commit()
     print(f"Updated miner_id : {miner_id} at ({position[0]:.1f}, {position[1]:.1f}) with confidence {confidence:.2f}")
 
-### FINISHED HERE, FIX 5, 6, 7 BELOW ###
+
+    # Add simulator position to database insert if available
+    sim_x = simulator_position['x'] if simulator_position else None
+    sim_y = simulator_position['y'] if simulator_position else None
+    # Note: You'd need to alter the table schema to add sim_x and sim_y columns
+    # For now, we'll use estimated_x and estimated_y for the simulator position when confidence is 1.0
 
 # 5 - Navigation and Pathfinding
 # Calculate and manage navigation paths using A* algorithm and handle miner movement
@@ -217,23 +222,33 @@ def process_miner_message(message_data, db_conn):
         miner_id = message.get('device_id')
         ble_readings = message.get('ble_readings', {})
         imu_data = message.get('imu_data', {})
-
+        
+        # *** Extract simulator's ground truth position ***
+        simulator_position = message.get('position')  # The simulator sends this
+        
         if not miner_id:
             print("Invalid Message, received without device_id")
             return
 
         # Estimate position using BLE fingerprinting
         position, confidence = estimate_miner_position(ble_readings)
+        
+        # *** If no ML estimate, fall back to simulator position ***
+        if not position and simulator_position:
+            position = (simulator_position['x'], simulator_position['y'])
+            confidence = 1.0  # Perfect confidence for simulator data
+        
         if position:
+            # Update local database (you can keep or remove this)
             update_miner_state(miner_id, position, confidence, imu_data, ble_readings, db_conn)
         else:
             print(f"Could not estimate position for miner {miner_id}")
             
-        # Send to Azure
+        # *** CRITICAL: KEEP THIS AZURE IOT HUB → COSMOSDB PIPELINE ***
         azure_payload = {
             "device_id": miner_id,
-            "timestamp": datetime.now().isoformat(),              # local gateway time
-            "device_timestamp": message.get("timestamp"),         # original message timestamp (simulator)
+            "timestamp": datetime.now().isoformat(),
+            "device_timestamp": message.get("timestamp"),
             "position": {
                 "x": position[0],
                 "y": position[1]
@@ -242,10 +257,17 @@ def process_miner_message(message_data, db_conn):
             "ble_readings": ble_readings,
             "imu_data": imu_data
         }
+        
+        # Add simulator position for comparison (optional)
+        if simulator_position:
+            azure_payload["simulator_position"] = simulator_position
+            
         battery_value = message.get("battery", imu_data.get("battery", None))
         if battery_value is not None:
             azure_payload["battery"] = battery_value
-        send_to_azure(azure_payload)
+            
+        send_to_azure(azure_payload)  # ← THIS SENDS TO AZURE IOT HUB → COSMOSDB
+        
     except Exception as e:
         print(f"Error processing miner message: {e}")
 
