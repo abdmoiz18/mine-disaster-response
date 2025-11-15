@@ -417,6 +417,12 @@ iot_hub_device_connection_string = "HostName=mine-resp-iothub.azure-devices.net;
 - "Quota exceeded" - You may have hit Azure limits; try a different region or subscription
 - For detailed Terraform help, see [`/cloud/terraform/README.md`](./cloud/terraform/README.md)
 
+> **💡 IMPORTANT NOTE ABOUT STREAM ANALYTICS:**
+> 
+> Terraform creates the Stream Analytics job but does **NOT** automatically start it. This is intentional to avoid unexpected Azure charges.
+> 
+> You **MUST** manually start the Stream Analytics job in Step 4.5 for data to flow from IoT Hub to Cosmos DB. Without this step, your telemetry data will reach IoT Hub but won't be stored in Cosmos DB, and Step 5 verification will fail.
+
 ---
 
 ### Step 3: Configure the Gateway for Azure
@@ -490,6 +496,49 @@ The Stream Analytics job acts as the data pipeline between IoT Hub and Cosmos DB
        [cosmosdb-output]
    FROM
        [iothub-input]
+   ```
+   - This query passes all IoT Hub messages directly to Cosmos DB
+   - Click "Save query" if you made any changes
+
+6. **Start the Stream Analytics Job (CRITICAL!):**
+   - Click on "Overview" in the left menu
+   - Click the **"Start"** button at the top
+   - Select "Now" for the job output start time
+   - Click "Start" to confirm
+   
+   **Expected Output:**
+   ```
+   Stream Analytics job is starting...
+   Stream Analytics job started successfully
+   ```
+   
+   **⚠️ IMPORTANT:** Without starting this job, data will NOT flow from IoT Hub to Cosmos DB!
+
+7. **Verify the Job is Running:**
+   ```bash
+   # Using Azure CLI
+   az stream-analytics job show \
+     --resource-group mine-resp-rg \
+     --name mine-resp-stream-analytics \
+     --query "jobState"
+   ```
+   
+   **Expected Output:** `"Running"`
+   
+   Alternatively, in the Azure Portal, the job status should show a green "Running" indicator.
+
+**Troubleshooting Stream Analytics:**
+
+- **Job fails to start:** Check that both IoT Hub input and Cosmos DB output are properly configured and show "Connected" status
+- **Job starts but no data in Cosmos DB:** Verify that the gateway is actually sending data to IoT Hub (check Step 4 output)
+- **"Insufficient permissions" error:** Ensure the managed identity has proper roles on IoT Hub and Cosmos DB
+- **High latency:** This is normal for the free tier; consider upgrading to a higher streaming unit if needed
+
+**Cost Management:**
+- Stream Analytics charges are based on **running time**, not data volume
+- Stop the job when not testing: Click "Stop" in the Azure Portal
+- Free tier: First 225,000 events/month are free, but streaming units still incur charges (~$0.11/hour for 1 SU)
+- Set up cost alerts in Azure Portal → Cost Management to avoid surprises
 
 ---
 
@@ -555,8 +604,13 @@ Now that everything is running, here's what you've built:
 ┌─────────────────┐  │  Azure IoT Hub  │
 │  mine_nav.db    │  └────────┬────────┘
 │  (SQLite)       │           │
-└────────┬────────┘           │ Stream Analytics
-         │ reads              ▼
+└────────┬────────┘           │ ⚠️ Stream Analytics
+         │ reads              │ (MUST be manually started!)
+         │            ┌───────▼──────────┐
+         │            │ Stream Analytics │
+         │            │ Job (Running)    │
+         │            └───────┬──────────┘
+         │                    ▼
          │            ┌─────────────────┐
          │            │  Cosmos DB      │
          │            │  (Cloud Store)  │
@@ -567,6 +621,8 @@ Now that everything is running, here's what you've built:
 │ (dashboard.py)  │  http://localhost:8050
 └─────────────────┘
 ```
+
+**⚠️ Critical Pipeline Note:** The Stream Analytics job is created by Terraform but NOT automatically started. You must start it manually in Step 4.5 for telemetry to reach Cosmos DB.
 
 ---
 
@@ -688,6 +744,75 @@ docker-compose up
 
 ---
 
+#### Data in IoT Hub but NOT in Cosmos DB
+
+**Problem:** Gateway shows "Message sent to Azure" but Cosmos DB Data Explorer is empty
+
+**This is the most common Azure deployment issue!**
+
+**Root Cause:** The Stream Analytics job is not running. Terraform creates it but doesn't start it automatically.
+
+**Solution Steps:**
+
+1. **Verify Stream Analytics Job Status:**
+   ```bash
+   az stream-analytics job show \
+     --resource-group mine-resp-rg \
+     --name mine-resp-stream-analytics \
+     --query "{name:name, state:jobState}"
+   ```
+   
+   If the output shows `"state": "Created"` or `"state": "Stopped"`, the job is not running!
+
+2. **Start the Stream Analytics Job:**
+   - Go to Azure Portal → Stream Analytics jobs
+   - Click on your job (e.g., `mine-resp-stream-analytics`)
+   - Click the **"Start"** button at the top
+   - Select "Now" for output start time
+   - Click "Start" to confirm
+   
+   Wait 1-2 minutes for the job to start.
+
+3. **Verify the Job is Running:**
+   ```bash
+   az stream-analytics job show \
+     --resource-group mine-resp-rg \
+     --name mine-resp-stream-analytics \
+     --query "jobState"
+   ```
+   
+   Should return: `"Running"`
+
+4. **Check for New Data in Cosmos DB:**
+   - Wait 30-60 seconds after starting the job
+   - Send a test message from the gateway
+   - Check Cosmos DB Data Explorer
+   - You should now see new documents appearing
+
+**Additional Checks if Still Not Working:**
+
+- **Verify IoT Hub Input Connection:**
+  - In Stream Analytics job → Inputs → iothub-input
+  - Click "Test connection" - should show "Success"
+
+- **Verify Cosmos DB Output Connection:**
+  - In Stream Analytics job → Outputs → cosmosdb-output
+  - Click "Test connection" - should show "Success"
+
+- **Check Stream Analytics Metrics:**
+  - In Stream Analytics job → Monitoring → Metrics
+  - Look for "Input Events" (should be > 0 if gateway is sending)
+  - Look for "Output Events" (should match input if query is correct)
+  - Look for "Runtime Errors" (should be 0)
+
+- **Review Activity Log:**
+  - In Stream Analytics job → Activity log
+  - Look for any error messages in the last hour
+
+**Prevention:** Always remember to start the Stream Analytics job after running `terraform apply`. Consider adding a reminder to your deployment checklist!
+
+---
+
 ## 📚 Next Steps
 
 Now that you have the system running:
@@ -720,13 +845,26 @@ Now that you have the system running:
 
 ### For Cloud Team
 
-1. **Add Stream Analytics Job**
-   - Set up real-time aggregations
-   - Configure alerts for anomalies
+1. **Monitor Stream Analytics Performance**
+   - Track input/output event rates in Azure Portal → Metrics
+   - Set up alerts for runtime errors or job failures
+   - Monitor streaming unit utilization (upgrade if > 80%)
+   - Review watermark delay for processing latency
 
-2. **Set Up Monitoring**
-   - Add Application Insights
-   - Configure Azure Monitor alerts
+2. **Optimize Stream Analytics Queries**
+   - Add tumbling/hopping windows for real-time aggregations
+   - Implement anomaly detection for unusual RSSI patterns
+   - Create alerts for miners entering dangerous zones
+   - Add data retention policies to manage Cosmos DB costs
+
+3. **Set Up Monitoring & Alerts**
+   - Add Application Insights for end-to-end telemetry tracking
+   - Configure Azure Monitor alerts for:
+     - Stream Analytics job failures
+     - IoT Hub throttling events
+     - Cosmos DB RU consumption spikes
+     - Gateway connectivity issues
+   - Create a dashboard in Azure Portal with key metrics
 
 ---
 
@@ -789,8 +927,13 @@ You've successfully set up the system when you can check all these boxes:
 **Azure Setup (Optional):**
 - [ ] Terraform deployed all resources successfully
 - [ ] Gateway shows "IoT Hub Client connected"
-- [ ] Messages are appearing in Cosmos DB
+- [ ] Gateway shows "Message sent to Azure" in the logs
+- [ ] Stream Analytics job is in "Running" state (verify in Azure Portal or CLI)
+- [ ] Stream Analytics job shows Input Events > 0 in Metrics
+- [ ] Stream Analytics job shows Output Events > 0 in Metrics
+- [ ] Messages are appearing in Cosmos DB Data Explorer
 - [ ] No error messages in any terminal
+- [ ] No runtime errors in Stream Analytics metrics
 
 ---
 
