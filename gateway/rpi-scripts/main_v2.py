@@ -166,13 +166,6 @@ def update_miner_state(miner_id, position, confidence, imu_data, ble_readings, d
         db_conn.commit()
     print(f"Updated miner_id : {miner_id} at ({position[0]:.1f}, {position[1]:.1f}) with confidence {confidence:.2f}")
 
-
-    # Add simulator position to database insert if available
-    sim_x = simulator_position['x'] if simulator_position else None
-    sim_y = simulator_position['y'] if simulator_position else None
-    # Note: You'd need to alter the table schema to add sim_x and sim_y columns
-    # For now, we'll use estimated_x and estimated_y for the simulator position when confidence is 1.0
-
 # 5 - Navigation and Pathfinding
 # Calculate and manage navigation paths using A* algorithm and handle miner movement
 
