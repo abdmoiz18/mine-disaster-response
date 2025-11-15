@@ -457,6 +457,42 @@ Message sent to Azure: {'device_id': 'miner_01', 'timestamp': '2025-11-15T19:35:
 
 ---
 
+### Step 4.5: Configure and Start the Stream Analytics Job
+
+The Stream Analytics job acts as the data pipeline between IoT Hub and Cosmos DB. By default, Terraform creates it but doesn't start it (to avoid unnecessary costs).
+
+**Configure the Job:**
+
+1. **Go to Azure Portal** → Search for "Stream Analytics jobs"
+2. **Click on your job** (e.g., `mine-resp-stream-analytics`)
+3. **Verify Inputs:**
+   - Click on "Inputs" in the left menu
+   - You should see an input named `iothub-input`
+   - Click on it to verify it's connected to your IoT Hub
+   - Status should show "Connected"
+
+4. **Verify Outputs:**
+   - Click on "Outputs" in the left menu
+   - You should see an output named `cosmosdb-output`
+   - Click on it to verify it's connected to your Cosmos DB
+   - Status should show "Connected"
+
+5. **Review the Query:**
+   - Click on "Query" in the left menu
+   - You should see something like:
+   ```sql
+   SELECT
+       System.Timestamp AS EventProcessedUtcTime,
+       DeviceId,
+       EventEnqueuedUtcTime,
+       *
+   INTO
+       [cosmosdb-output]
+   FROM
+       [iothub-input]
+
+---
+
 ### Step 5: Verify Data in Azure Cosmos DB
 
 **Option 1: Azure Portal**
