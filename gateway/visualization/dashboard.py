@@ -17,6 +17,73 @@ DB_PATH = os.path.join(os.path.dirname(__file__), '../rpi-scripts/mine_nav.db')
 # Safe zone configuration (matches your main_v2.py)
 SAFE_ZONE = (0, 15)
 
+# BLE Beacon positions (matches init_simulator_v2.py exactly)
+BLE_BEACONS = [
+    {'id': 'beacon_001', 'x': 5, 'y': 5},
+    {'id': 'beacon_002', 'x': 5, 'y': 15},
+    {'id': 'beacon_003', 'x': 5, 'y': 25},
+    {'id': 'beacon_004', 'x': 15, 'y': 5},
+    {'id': 'beacon_005', 'x': 15, 'y': 15},
+    {'id': 'beacon_006', 'x': 15, 'y': 25},
+    {'id': 'beacon_007', 'x': 25, 'y': 5},
+    {'id': 'beacon_008', 'x': 25, 'y': 15},
+    {'id': 'beacon_009', 'x': 25, 'y': 25},
+    {'id': 'beacon_010', 'x': 10, 'y': 10},
+    {'id': 'beacon_011', 'x': 20, 'y': 20},
+    {'id': 'beacon_012', 'x': 10, 'y': 20},
+]
+
+# Wall definitions - Maze layout for mine tunnels
+# Each wall is defined as [(x1, y1), (x2, y2)]
+WALLS = [
+    # Main vertical corridors (with gaps for horizontal movement)
+    [(5, 0), (5, 8)],        # Left vertical - bottom section
+    [(5, 12), (5, 20)],      # Left vertical - top section (gap at 8-12)
+    
+    [(10, 5), (10, 15)],     # Left-center vertical (gap at bottom and top)
+    [(10, 18), (10, 25)],    # Left-center vertical - upper section
+    
+    [(15, 0), (15, 10)],     # Center vertical - bottom section
+    [(15, 13), (15, 22)],    # Center vertical - upper section (gap at 10-13)
+    
+    [(20, 8), (20, 18)],     # Right-center vertical (gaps at top and bottom)
+    [(20, 22), (20, 30)],    # Right-center vertical - top section
+    
+    [(25, 0), (25, 12)],     # Right vertical - bottom section
+    [(25, 16), (25, 25)],    # Right vertical - upper section (gap at 12-16)
+    
+    # Main horizontal corridors (with gaps for vertical movement)
+    [(0, 5), (8, 5)],        # Bottom horizontal - left section
+    [(12, 5), (20, 5)],      # Bottom horizontal - right section (gap at 8-12)
+    
+    [(5, 10), (13, 10)],     # Lower-center horizontal - left section
+    [(17, 10), (28, 10)],    # Lower-center horizontal - right section (gap at 13-17)
+    
+    [(0, 15), (8, 15)],      # Center horizontal - left section (safe zone accessible!)
+    [(12, 15), (18, 15)],    # Center horizontal - middle section
+    [(22, 15), (30, 15)],    # Center horizontal - right section (gaps at 8-12 and 18-22)
+    
+    [(8, 20), (18, 20)],     # Upper-center horizontal (gaps at sides)
+    [(22, 20), (28, 20)],    # Upper-center horizontal - right section
+    
+    [(0, 25), (10, 25)],     # Top horizontal - left section
+    [(14, 25), (22, 25)],    # Top horizontal - right section (gap at 10-14)
+    
+    # Internal maze walls - creating interesting paths
+    [(7, 2), (13, 2)],       # Bottom internal horizontal
+    [(17, 7), (23, 7)],      # Lower-right horizontal
+    [(3, 12), (8, 12)],      # Left-side horizontal
+    [(12, 17), (17, 17)],    # Mid-upper horizontal
+    [(22, 22), (27, 22)],    # Top-right horizontal
+    
+    # Vertical maze elements
+    [(8, 15), (8, 18)],      # Small vertical connector
+    [(18, 0), (18, 6)],      # Bottom vertical
+    [(23, 12), (23, 18)],    # Right-side vertical
+    [(13, 27), (13, 30)],    # Upper vertical
+    [(27, 3), (27, 8)],      # Bottom-right vertical
+]
+
 app.layout = html.Div([
     html.H1("Mine Disaster Response - Live Demo", style={'textAlign': 'center', 'color': '#2c3e50'}),
     
@@ -118,13 +185,43 @@ def update_dashboard(n, position_mode):
         empty_fig = create_empty_figure(f"Database error: {str(e)}")
         return empty_fig, "Error", "Error", "Error"
     
-    # CRITICAL FIX: Since estimate_miner_position is a stub, we need actual position from simulator
-    # The simulator sends position in the UDP message, but main_v2.py doesn't store it in the DB
-    # For now, we'll use estimated_x and estimated_y (which are random from the stub)
-    # TODO: Update main_v2.py to extract and store the simulator's position field
-    
     # Create figure
     fig = go.Figure()
+    
+    # *** ADD WALLS FIRST (so they appear in background) ***
+    for idx, wall in enumerate(WALLS):
+        fig.add_trace(go.Scatter(
+            x=[wall[0][0], wall[1][0]],
+            y=[wall[0][1], wall[1][1]],
+            mode='lines',
+            name='Walls' if idx == 0 else None,
+            line=dict(color='#34495e', width=8),
+            showlegend=(idx == 0),
+            legendgroup='walls',
+            hovertemplate='<b>Wall Obstacle</b><extra></extra>'
+        ))
+    
+    # *** ADD BLE BEACONS ***
+    beacon_x = [b['x'] for b in BLE_BEACONS]
+    beacon_y = [b['y'] for b in BLE_BEACONS]
+    beacon_text = [b['id'].replace('beacon_', 'B') for b in BLE_BEACONS]
+    
+    fig.add_trace(go.Scatter(
+        x=beacon_x,
+        y=beacon_y,
+        mode='markers+text',
+        name='BLE Beacons',
+        marker=dict(
+            size=15,
+            color='#f39c12',
+            symbol='diamond',
+            line=dict(color='#d68910', width=2)
+        ),
+        text=beacon_text,
+        textposition='top center',
+        textfont=dict(size=9, color='#d68910', family='Arial'),
+        hovertemplate='<b>%{text}</b><br>Position: (%{x}, %{y})<extra></extra>'
+    ))
     
     # Color palette for miners
     colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#e67e22']
@@ -248,9 +345,12 @@ if __name__ == '__main__':
     print("="*60)
     print(f"Database path: {DB_PATH}")
     print(f"Dashboard URL: http://localhost:8050")
+    print(f"\nVisualization includes:")
+    print(f"  - {len(BLE_BEACONS)} BLE Beacons (diamond markers)")
+    print(f"  - {len(WALLS)} Wall obstacles (thick gray lines)")
+    print(f"  - Safe zone at {SAFE_ZONE}")
     print("\nMake sure you have:")
     print("  1. main_v2.py running (creates the database)")
     print("  2. simulator running (generates miner data)")
     print("="*60)
     app.run_server(debug=True, host='0.0.0.0', port=8050)
-    
