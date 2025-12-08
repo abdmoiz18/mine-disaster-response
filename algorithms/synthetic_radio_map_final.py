@@ -18,11 +18,11 @@ BEACON_POSITIONS = {
 def distance(x, y, beacon_pos):
     return np.sqrt((x - beacon_pos[0])**2 + (y - beacon_pos[1])**2)
 
-def rssi_from_distance(d, tx_power=-50, path_loss=2. 5):
+def rssi_from_distance(d, tx_power=-50, path_loss=2.5):
     """Log-distance path loss model."""
-    if d < 0. 5:
+    if d < 0.5:
         d = 0.5
-    return tx_power - 10 * path_loss * np. log10(d)
+    return tx_power - 10 * path_loss * np.log10(d)
 
 def get_passable_cells():
     """Get passable cells from your maze layout."""
