@@ -53,6 +53,21 @@ def solve_maze_to_nearest_exit(start_x, start_y, maze_data):
     path_coordinates.reverse()
     return path_coordinates
 
+def solve_maze_to_nearest_exit(start_x, start_y, maze_data):
+    """
+    Solves the maze using a Cartesian grid where (0,0) is at the bottom-left.
+    This is the primary solver for the system.
+    """
+    # This code is from your new `solve_maze_to_nearest_exit_cartesian`
+    grid_cart = maze_data['grid_cartesian']
+    exits = maze_data['exits']
+    W, H = maze_data['dimensions']
+
+    # This is a much safer way to check if the start is a wall.
+    if grid_cart[start_y, start_x] == 1:
+        print(f"Error: Start position ({start_x}, {start_y}) is a wall.")
+        return []
+
 def get_navigation_stack(miner_id, current_x, current_y, maze_data):
     path = solve_maze_to_nearest_exit(current_x, current_y, maze_data)
 
