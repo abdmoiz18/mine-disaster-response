@@ -246,7 +246,7 @@ class RSSIPreprocessor:
             results['status'] = 'HIGH_CONFIDENCE'
         elif valid_beacon_count >= 2 and results['overall_confidence'] >= 0.5:
             results['status'] = 'MEDIUM_CONFIDENCE'
-         elif valid_beacon_count >= 1:
+        elif valid_beacon_count >= 1:
             results['status'] = 'LOW_CONFIDENCE'
         else:
             results['status'] = 'NO_VALID_DATA'

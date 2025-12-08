@@ -11,6 +11,8 @@ import socket
 import threading
 import os
 import sys
+repo_root = os. path.dirname(os.path.dirname(os.path.dirname(os.path. abspath(__file__))))
+sys.path.insert(0, repo_root)
 from datetime import datetime
 from azure.iot.device import IoTHubDeviceClient, Message
 from concurrent.futures import ThreadPoolExecutor
@@ -218,11 +220,11 @@ def estimate_miner_position(ble_readings, miner_id=None):
     global fingerprint_matcher, rssi_preprocessor, miner_state_manager
     
     if not ble_readings:
-        return None, 0. 0
+        return None, 0.0
     
     if not fingerprint_matcher:
         # No radio map available - cannot estimate position
-        return None, 0. 0
+        return None, 0.0
     
     # Convert ble_readings to format expected by preprocessor
     # Handle both single values and lists of values
@@ -279,7 +281,7 @@ def estimate_miner_position(ble_readings, miner_id=None):
         return position, confidence
     
     print(f"  Localization failed for {miner_id}: {location_result['status']}")
-    return None, 0. 0
+    return None, 0.0
 
 
 # 6 - Pathfinding and Navigation
@@ -402,7 +404,7 @@ def update_miner_state(miner_id, position, confidence, imu_data, ble_readings,
                 miner_id,
                 timestamp,
                 'NAVIGATE_TO_EXIT',
-                json. dumps(path),
+                json.dumps([(int(x), int(y)) for x, y in path] if path else []),
                 json.dumps(move_sequence[:MOVE_LIMIT_PER_CYCLE])
             ))
         
@@ -428,7 +430,7 @@ def update_miner_state(miner_id, position, confidence, imu_data, ble_readings,
         
         db_conn.commit()
     
-    print(f"Updated state for {miner_id}: pos=({position[0]:. 1f}, {position[1]:.1f}), conf={confidence:.2f}" if position else f"Updated state for {miner_id}: no position")
+    print(f"Updated state for {miner_id}: pos=({position[0]:.1f}, {position[1]:.1f}), conf={confidence:.2f}" if position else f"Updated state for {miner_id}: no position")
 
 
 # 8 - Message Processing
@@ -589,7 +591,7 @@ def main_loop(db_conn):
             else:
                 active_miners = []
                 inactive_miners = []
-                avg_confidence = 0. 0
+                avg_confidence = 0.0
                 miners_data = []
             
             # Send gateway status update
@@ -613,7 +615,7 @@ def main_loop(db_conn):
                 state = miner_state_manager.get_miner_state(miner_id)
                 if state and state['current_location']:
                     loc = state['current_location']
-                    print(f"  {miner_id}: ({loc[0]:. 1f}, {loc[1]:.1f}) - {state['status']}")
+                    print(f"  {miner_id}: ({loc[0]:.1f}, {loc[1]:.1f}) - {state['status']}")
             
             time.sleep(10)  # Status update interval
             
