@@ -220,3 +220,4 @@ class MinerStateManager:
             rssi_vector.append(state['smoothed_rssi'].get(beacon_id, -100))
 
         return rssi_vector
+    
