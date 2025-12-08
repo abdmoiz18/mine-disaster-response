@@ -498,7 +498,7 @@ def process_miner_message(message_data, db_conn):
                     moves_to_send = move_sequence[:MOVE_LIMIT_PER_CYCLE]
                     print(f"  Move sequence: {' '. join(moves_to_send)} ({len(move_sequence)} total)")
             else:
-                print(f"  Confidence {confidence:. 2f} below threshold {MIN_CONFIDENCE_THRESHOLD}")
+                print(f"  Confidence {confidence:.2f} below threshold {MIN_CONFIDENCE_THRESHOLD}")
             
             # Step 6: Update state and database
             update_miner_state(
