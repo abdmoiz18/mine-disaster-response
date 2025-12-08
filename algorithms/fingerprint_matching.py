@@ -243,4 +243,4 @@ class FingerprintMatcher:
             elif rssi_value < -95:
                 warnings.append(f"Beacon {beacon_id}: RSSI {rssi_value} very weak (near detection limit)")
 
-        return warning
+        return warnings

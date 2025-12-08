@@ -245,4 +245,51 @@ class RSSIPreprocessor:
         if valid_beacon_count >= 2 and results['overall_confidence'] >= 0.7:
             results['status'] = 'HIGH_CONFIDENCE'
         elif valid_beacon_count >= 2 and results['overall_confidence'] >= 0.5:
-            results['status'].
+            results['status'] = 'MEDIUM_CONFIDENCE'
+         elif valid_beacon_count >= 1:
+            results['status'] = 'LOW_CONFIDENCE'
+        else:
+            results['status'] = 'NO_VALID_DATA'
+
+        return results
+
+    def reset_miner_history(self, miner_id):
+        """Reset history for a specific miner."""
+        if miner_id in self.state_history:
+            for beacon_id in ['B1', 'B2', 'B3']:
+                self.state_history[miner_id][beacon_id]['values'].clear()
+                self.state_history[miner_id][beacon_id]['stability'] = 1.0
+
+    def get_miner_statistics(self, miner_id):
+
+        if miner_id not in self.state_history:
+            return None
+
+        stats = {}
+        for beacon_id in ['B1', 'B2', 'B3']:
+            values = list(self.state_history[miner_id][beacon_id]['values'])
+            if values:
+                stats[beacon_id] = {
+                    'history_length': len(values),
+                    'mean': round(float(np.mean(values)), 1),
+                    'std': round(float(np.std(values)), 2) if len(values) > 1 else 0.0,
+                    'trend': self._calculate_trend(values),
+                    'latest': values[-1] if values else None
+                }
+            else:
+                stats[beacon_id] = {'history_length': 0, 'mean': None, 'std': None, 'trend': None}
+
+        return stats
+
+    def _calculate_trend(self, values):
+        """Calculate simple trend (increasing, decreasing, stable)."""
+        if len(values) < 3:
+            return 'insufficient_data'
+
+        recent = values[-3:]
+        if recent[2] > recent[0] + 1:
+            return 'increasing'
+        elif recent[2] < recent[0] - 1:
+            return 'decreasing'
+        else:
+            return 'stable'
