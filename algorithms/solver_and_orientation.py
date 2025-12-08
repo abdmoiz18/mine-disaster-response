@@ -53,7 +53,7 @@ def solve_maze_to_nearest_exit(start_x, start_y, maze_data):
     path_coordinates.reverse()
     return path_coordinates
 
-def solve_maze_to_nearest_exit(start_x, start_y, maze_data):
+def solve_maze_to_nearest_exit_cartesian(start_x, start_y, maze_data):
     """
     Solves the maze using a Cartesian grid where (0,0) is at the bottom-left.
     This is the primary solver for the system.
