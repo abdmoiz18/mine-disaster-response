@@ -1,3 +1,5 @@
+from algorithms.solver_and_orientation import get_navigation_stack
+
 def convert_coordinate_stack_to_move_sequence(coord_stack, start_x, start_y, start_facing='N'):
     if not coord_stack:
         return []
