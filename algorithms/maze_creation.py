@@ -68,37 +68,37 @@ def visualize_map(grid):
     plt.tight_layout()
     plt.show()
 
-def create_digitized_maze_data(visual_grid):
 
+def create_digitized_maze_data_cartesian(visual_grid):
+    """
+    Creates a digitized maze dictionary using a Cartesian coordinate system,
+    where the origin (0,0) is at the bottom-left corner.
+    """
     H, W = visual_grid.shape
-
 
     digitized = {
         'grid': visual_grid.copy(),
-        'dimensions': (H, W),
-        'coordinate_system': 'grid[y, x] where y=row (0-24), x=col (0-16)',
-
-        # Extract all exits (value == 2)
+        'dimensions': (W, H),  # (Width, Height) for Cartesian
+        'coordinate_system': 'Cartesian: (x, y) where x=horizontal, y=vertical, origin at bottom-left',
         'exits': [],
-
-        # Extract all walls (value == 1)
         'walls': [],
-
-        # Extract all walkable passages (value == 0)
         'passages': []
     }
 
-    # Scan the grid and categorize each cell
-    for y in range(H):
-        for x in range(W):
-            value = visual_grid[y, x]
-            coord = (x, y)  # (x, y) Cartesian format
+    # Flip the grid vertically to create the Cartesian view
+    digitized['grid_cartesian'] = np.flipud(visual_grid)
+
+    # Populate lists with Cartesian coordinates
+    for y_cart in range(H):
+        for x_cart in range(W):
+            value = digitized['grid_cartesian'][y_cart, x_cart]
+            coord = (x_cart, y_cart)
 
             if value == 2:  # Exit
                 digitized['exits'].append(coord)
             elif value == 1:  # Wall
                 digitized['walls'].append(coord)
-            else:  # Passage (value == 0)
+            else:  # Passage
                 digitized['passages'].append(coord)
 
     return digitized
