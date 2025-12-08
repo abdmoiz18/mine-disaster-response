@@ -10,7 +10,7 @@ import time
 import random
 
 # Configuration - must match main_final.py
-UDP_IP = "127.0.0. 1"
+UDP_IP = "127.0.0.1"
 UDP_PORT = 5000
 
 # Simulated miners with starting positions (must be passable cells in your maze)
@@ -33,7 +33,7 @@ def generate_miner_packet(miner_id, position):
         "imu_data": {
             "accel_x": round(random.uniform(-0.1, 0.1), 3),
             "accel_y": round(random.uniform(-0.1, 0.1), 3),
-            "accel_z": round(9.8 + random.uniform(-0. 1, 0.1), 3),
+            "accel_z": round(9.8 + random.uniform(-0.1, 0.1), 3),
         },
         "battery": random.randint(70, 100)
     }
@@ -73,4 +73,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    

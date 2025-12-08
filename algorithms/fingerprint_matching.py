@@ -1,6 +1,7 @@
 import numpy as np
 import math
 import json
+import scipy
 from scipy.stats import norm
 
 class FingerprintMatcher:
