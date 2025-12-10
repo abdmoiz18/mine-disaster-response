@@ -29,7 +29,7 @@ from algorithms. solver_and_orientation import get_navigation_stack
 from algorithms.navigation import convert_coordinate_stack_to_move_sequence
 
 # Configuration
-CONNECTION_STRING = os. getenv("IOTHUB_DEVICE_CONNECTION_STRING")
+CONNECTION_STRING = os.getenv("IOTHUB_DEVICE_CONNECTION_STRING")
 UDP_IP = '0.0.0.0'
 UDP_PORT = 5000
 
@@ -547,25 +547,59 @@ def process_miner_message(message_data, db_conn):
         traceback.print_exc()
 
 
-# 9 - UDP Listener
+# 9 - TCP Listener and Handler
 
-def udp_listener(db_conn):
-    """Listen for UDP messages from miners and process them using thread pool."""
-    sock = socket.socket(socket.AF_INET, socket. SOCK_DGRAM)
-    sock. bind((UDP_IP, UDP_PORT))
-    print(f"Listening for UDP messages on {UDP_IP}:{UDP_PORT}")
-    
+TCP_IP = ''    # Bind to all interfaces
+TCP_PORT = 5000
+BUFFER_SIZE = 4096
+
+def tcp_client_handler(conn, addr, db_conn):
+    """Handles a single miner connection (bidirectional, reliable length-prefixed protocol)."""
+    print(f"[TCP] Connected to miner at {addr}")
+    conn.settimeout(60)
     try:
         while True:
-            try:
-                data, addr = sock.recvfrom(4096)  # Increased buffer for larger messages
-                # Submit to thread pool for processing
-                thread_pool.submit(process_miner_message, data, db_conn)
-            except KeyboardInterrupt:
-                print("UDP listener stopped.")
-                break
-            except Exception as e:
-                print(f"Error in UDP listener: {e}")
+            # Read 4 bytes for message length (big-endian)
+            lengthbuf = b''
+            while len(lengthbuf) < 4:
+                more = conn.recv(4 - len(lengthbuf))
+                if not more:
+                    print(f"[TCP] Connection closed by {addr}")
+                    return
+                lengthbuf += more
+            msglen = int.from_bytes(lengthbuf, 'big')
+            # Read the full message
+            databytes = b''
+            while len(databytes) < msglen:
+                more = conn.recv(msglen - len(databytes))
+                if not more:
+                    print(f"[TCP] Connection lost from {addr}")
+                    return
+                databytes += more
+            # Thread pool for consistency
+            thread_pool.submit(process_miner_message, databytes, db_conn)
+            # Respond with ACK/status if desired
+            response = json.dumps({"status": "ok", "timestamp": time.time()}).encode('utf-8')
+            conn.send(len(response).to_bytes(4, 'big') + response)
+    except Exception as e:
+        print(f"[TCP] Error with {addr}: {e}")
+    finally:
+        conn.close()
+        print(f"[TCP] Closed connection for {addr}")
+
+def tcp_listener(db_conn):
+    """Accepts connections and spawns handlers for each miner."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.bind((TCP_IP, TCP_PORT))
+    sock.listen()
+    print(f"[TCP] Listening for miner connections on port {TCP_PORT}...")
+    try:
+        while True:
+            conn, addr = sock.accept()
+            threading.Thread(target=tcp_client_handler, args=(conn, addr, db_conn), daemon=True).start()
+    except KeyboardInterrupt:
+        print("TCP listener stopped.")
     finally:
         sock.close()
 
@@ -645,9 +679,9 @@ if __name__ == "__main__":
     print("\n[3/4] Initializing algorithm components...")
     init_algorithms()
     
-    print("\n[4/4] Starting UDP listener...")
-    udp_thread = threading.Thread(target=udp_listener, args=(db_conn,), daemon=True)
-    udp_thread.start()
+    print("\n[4/4] Starting TCP listener...")
+    tcp_thread = threading.Thread(target=tcp_listener, args=(db_conn,), daemon=True)
+    tcp_thread.start()
     
     print("\n" + "=" * 60)
     print("Gateway started successfully!")
