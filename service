@@ -1,0 +1,12 @@
+[Unit]
+Description=MineNav ESP32 Hotspot
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/bash -c "sleep 10 && systemctl start hostapd && systemctl start dnsmasq && /etc/esp32_optimize.sh"
+ExecStop=/bin/bash -c "systemctl stop hostapd && systemctl stop dnsmasq"
+
+[Install]
+WantedBy=multi-user.target
