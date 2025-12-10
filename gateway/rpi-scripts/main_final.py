@@ -554,33 +554,42 @@ TCP_PORT = 5000
 BUFFER_SIZE = 4096
 
 def tcp_client_handler(conn, addr, db_conn):
-    """Handles a single miner connection (bidirectional, reliable length-prefixed protocol)."""
+    """Handles a single miner connection (command-response protocol for ESP32)."""
     print(f"[TCP] Connected to miner at {addr}")
-    conn.settimeout(60)
+    conn.settimeout(10)
     try:
-        while True:
-            # Read 4 bytes for message length (big-endian)
-            lengthbuf = b''
-            while len(lengthbuf) < 4:
-                more = conn.recv(4 - len(lengthbuf))
-                if not more:
-                    print(f"[TCP] Connection closed by {addr}")
-                    return
-                lengthbuf += more
-            msglen = int.from_bytes(lengthbuf, 'big')
-            # Read the full message
-            databytes = b''
-            while len(databytes) < msglen:
-                more = conn.recv(msglen - len(databytes))
-                if not more:
-                    print(f"[TCP] Connection lost from {addr}")
-                    return
-                databytes += more
-            # Thread pool for consistency
-            thread_pool.submit(process_miner_message, databytes, db_conn)
-            # Respond with ACK/status if desired
-            response = json.dumps({"status": "ok", "timestamp": time.time()}).encode('utf-8')
-            conn.send(len(response).to_bytes(4, 'big') + response)
+        # Wait for "SCAN" command from ESP32
+        data = conn.recv(1024).decode('utf-8').strip()
+        
+        if data == "SCAN":
+            print(f"Received SCAN command from {addr}")
+            
+            # Send acknowledgment
+            conn.send(b"READY\n")
+            
+            # Wait for JSON data from ESP32
+            json_data = ""
+            while True:
+                chunk = conn.recv(1024).decode('utf-8')
+                if not chunk:
+                    break
+                json_data += chunk
+                if '}' in json_data:  # Simple JSON end detection
+                    break
+            
+            if json_data:
+                # Process as miner message (calls the full pipeline)
+                process_miner_message(json_data.encode('utf-8'), db_conn)
+                
+                # Send response back to ESP32
+                response = {
+                    "display_text": "Scan complete. Data processed.",
+                    "status": "success"
+                }
+                conn.send((json.dumps(response) + "\n").encode('utf-8'))
+        else:
+            print(f"Unknown command from {addr}: {data}")
+            conn.send(b"ERROR: Unknown command\n")
     except Exception as e:
         print(f"[TCP] Error with {addr}: {e}")
     finally:
