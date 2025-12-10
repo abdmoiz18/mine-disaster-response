@@ -556,7 +556,7 @@ BUFFER_SIZE = 4096
 def tcp_client_handler(conn, addr, db_conn):
     """Handles a single miner connection (command-response protocol for ESP32)."""
     print(f"[TCP] Connected to miner at {addr}")
-    conn.settimeout(10)
+    conn.settimeout(30)
     try:
         # Wait for "SCAN" command from ESP32
         data = conn.recv(1024).decode('utf-8').strip()
