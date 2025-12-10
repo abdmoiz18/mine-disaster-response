@@ -549,47 +549,62 @@ def process_miner_message(message_data, db_conn):
 
 # 9 - TCP Listener and Handler
 
-TCP_IP = ''    # Bind to all interfaces
-TCP_PORT = 5000
-BUFFER_SIZE = 4096
-
 def tcp_client_handler(conn, addr, db_conn):
-    """Handles a single miner connection (command-response protocol for ESP32)."""
-    print(f"[TCP] Connected to miner at {addr}")
-    conn.settimeout(30)
+    """Handles demo: Wait for 'connected', send SCAN, receive JSON, process, send full path."""
+    print(f"[TCP] Connected to ESP32 at {addr}")
+    conn.settimeout(10)
     try:
-        # Wait for "SCAN" command from ESP32
+        # Wait for "connected" from ESP32
         data = conn.recv(1024).decode('utf-8').strip()
-        
-        if data == "SCAN":
-            print(f"Received SCAN command from {addr}")
+        if data == "connected":
+            print("Received 'connected' from ESP32")
             
-            # Send acknowledgment
-            conn.send(b"READY\n")
+            # Send "SCAN" to trigger ESP32
+            conn.send(b"SCAN\n")
+            print("Sent SCAN command to ESP32")
             
-            # Wait for JSON data from ESP32
+            # Wait for JSON response
             json_data = ""
             while True:
                 chunk = conn.recv(1024).decode('utf-8')
                 if not chunk:
                     break
                 json_data += chunk
-                if '}' in json_data:  # Simple JSON end detection
+                if '}' in json_data:
                     break
             
             if json_data:
-                # Process as miner message (calls the full pipeline)
+                # Process (calculates full path)
                 process_miner_message(json_data.encode('utf-8'), db_conn)
                 
-                # Send response back to ESP32
+                # Extract miner_id from JSON (or default to "M01")
+                try:
+                    message = json.loads(json_data)
+                    miner_id = message.get('device_id', 'M01')
+                except:
+                    miner_id = 'M01'
+                
+                # Get the full move sequence
+                global miner_state_manager
+                move_sequence = []
+                if miner_state_manager:
+                    state = miner_state_manager.get_miner_state(miner_id)
+                    if state and state.get('instruction_queue'):
+                        move_sequence = state['instruction_queue']
+                
+                # Send full path as response
+                path_str = ' '.join(move_sequence) if move_sequence else "No path found"
                 response = {
-                    "display_text": "Scan complete. Data processed.",
+                    "display_text": f"Path: {path_str}",
                     "status": "success"
                 }
                 conn.send((json.dumps(response) + "\n").encode('utf-8'))
+                print(f"Sent full path to ESP32: {path_str}")
+            else:
+                conn.send(b"ERROR: No data received\n")
         else:
-            print(f"Unknown command from {addr}: {data}")
-            conn.send(b"ERROR: Unknown command\n")
+            print(f"Unexpected message: {data}")
+            conn.send(b"ERROR: Not connected\n")
     except Exception as e:
         print(f"[TCP] Error with {addr}: {e}")
     finally:
