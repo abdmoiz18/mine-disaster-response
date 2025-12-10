@@ -549,6 +549,9 @@ def process_miner_message(message_data, db_conn):
 
 # 9 - TCP Listener and Handler
 
+TCP_IP = ''
+TCP_PORT = 5000
+BUFFER_SIZE = 4096
 def tcp_client_handler(conn, addr, db_conn):
     """Handles demo: Wait for 'connected', send SCAN, receive JSON, process, send full path."""
     print(f"[TCP] Connected to ESP32 at {addr}")
@@ -556,7 +559,7 @@ def tcp_client_handler(conn, addr, db_conn):
     try:
         # Wait for "connected" from ESP32
         data = conn.recv(1024).decode('utf-8').strip()
-        if data == "connected":
+        if data == "CONNECTED":
             print("Received 'connected' from ESP32")
             
             # Send "SCAN" to trigger ESP32
