@@ -151,7 +151,7 @@ if __name__ == "__main__":
     print("Original Map Shape:", visual_maze_grid.shape)
 
     # Create digitized version for pathfinding
-    digitized_maze = create_digitized_maze_data(visual_maze_grid)
+    digitized_maze = create_digitized_maze_data_cartesian(visual_maze_grid)
 
     # Print summary of digitized data
     print_maze_summary(digitized_maze)
